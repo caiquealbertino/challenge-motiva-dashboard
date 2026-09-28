@@ -1,0 +1,95 @@
+/* ─────────────────────────────────────────
+   Motiva — base.css
+   Estilos compartilhados (header, variáveis, botões, etc)
+───────────────────────────────────────── */
+
+:root {
+    --bg:         #15121c;
+    --bg-surface: #1e1a29;
+    --bg-card:    #251f33;
+    --border:     #383047;
+    --border-lit: #5b4a7a;
+    --green-dim:  #8e44ad;
+    --green:      #9b5de5;
+    --green-lit:  #cba6f7;
+    --blue:       #7c5cff;
+    --amber:      #f2a61f;
+    --red:        #ff4d6d;
+    --text-primary:   #f2eefb;
+    --text-secondary: #b6adca;
+    --text-muted:     #7a7091;
+    --font-mono: 'Space Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+    --shadow-card: 0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text-primary); display: flex; flex-direction: column; }
+
+/* ── HEADER ── */
+.app-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .6rem 1.25rem; background: var(--bg-surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 1rem;
+}
+.header-brand { display: flex; align-items: center; gap: .65rem; }
+.header-icon  { font-size: 1.5rem; filter: drop-shadow(0 0 6px #6f3fa840); }
+.header-title { font-family: var(--font-mono); font-size: 1rem; font-weight: 700; letter-spacing: .08em; color: var(--green-lit); text-transform: uppercase; }
+.header-subtitle { font-size: .68rem; color: var(--text-secondary); margin-top: 1px; }
+.header-meta { display: flex; align-items: center; gap: .9rem; }
+
+/* ── TAB NAV ── */
+.tab-nav { display: flex; gap: .4rem; }
+.tab-btn {
+    font-family: var(--font-mono); font-size: .68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em;
+    padding: .35rem .8rem; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+    transition: all .2s;
+}
+.tab-btn:hover  { border-color: var(--green-dim); color: var(--text-primary); }
+.tab-btn.active { background: rgba(111,63,168,.12); border-color: var(--green); color: var(--green-lit); }
+
+/* ── BADGE ── */
+.badge { font-family: var(--font-mono); font-size: .68rem; padding: .22rem .55rem; border-radius: 20px; border: 1px solid var(--green-dim); color: var(--green); background: rgba(82,183,136,.08); transition: all .4s; }
+.badge.loading { color: var(--amber); border-color: #7a5c1a; background: rgba(242,166,31,.12); }
+.badge.done    { color: var(--green); border-color: var(--green-dim); }
+.badge.error   { color: var(--red);   border-color: #e11d2e; background: rgba(225,29,46,.08); }
+.header-time   { font-family: var(--font-mono); font-size: .68rem; color: var(--text-muted); }
+
+/* ── TAB PANELS ── */
+.tab-panel { display: none; flex: 1; overflow: hidden; }
+.tab-panel.active { display: flex; }
+
+/* ── BUTTONS ── */
+.btn-primary   { font-family: var(--font-mono); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: .45rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--green); background: var(--green); color: #ffffff; cursor: pointer; transition: all .2s; }
+.btn-primary:hover { background: var(--green-lit); border-color: var(--green-lit); }
+.btn-secondary { font-family: var(--font-mono); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: .45rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all .2s; }
+.btn-secondary:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.modal-overlay.hidden { display: none; }
+.modal { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; width: 340px; box-shadow: 0 8px 40px rgba(0,0,0,.6); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
+.modal-title  { font-family: var(--font-mono); font-size: .82rem; font-weight: 700; color: var(--green-lit); }
+.modal-close  { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; line-height: 1; }
+.modal-close:hover { color: var(--text-primary); }
+.modal-coords { font-family: var(--font-mono); font-size: .68rem; color: var(--text-secondary); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .35rem .6rem; margin-bottom: .85rem; }
+.modal-field  { margin-bottom: .75rem; }
+.modal-label  { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: .3rem; }
+.modal-input  { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .45rem .65rem; color: var(--text-primary); font-family: var(--font-body); font-size: .8rem; outline: none; transition: border-color .2s; }
+.modal-input:focus { border-color: var(--green); }
+.modal-actions { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1rem; }
+
+/* ── INPUTS ── */
+.input-error { border-color: var(--red) !important; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+    .tab-nav .tab-btn { font-size: .6rem; padding: .28rem .55rem; }
+}

@@ -1,0 +1,179 @@
+/* ─────────────────────────────────────────
+   Motiva — ai-prediction.css
+   Estilos do Dashboard Previsão IA
+───────────────────────────────────────── */
+
+/* ── PREDICTION PANEL ── */
+.predict-panel { flex: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; gap: 1.4rem; max-width: 820px; margin: 0 auto; width: 100%; }
+.predict-panel::-webkit-scrollbar { width: 4px; }
+.predict-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.predict-header { }
+.predict-title { font-family: var(--font-mono); font-size: 1rem; font-weight: 700; color: var(--green-lit); margin-bottom: .4rem; }
+.predict-desc  { font-size: .82rem; color: var(--text-secondary); }
+
+/* ── EMPTY STATE ── */
+.predict-empty {
+    background: rgba(242,166,31,.08); border: 1px dashed #7a5c1a; border-radius: var(--radius-md);
+    padding: .8rem 1rem; font-size: .78rem; color: var(--amber);
+}
+.predict-empty.hidden { display: none; }
+
+/* ── PREDICT FORM ── */
+.predict-form {
+    display: grid; grid-template-columns: 1.6fr 1.6fr 1fr auto; gap: .9rem; align-items: end;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem;
+}
+.predict-field { display: flex; flex-direction: column; gap: .3rem; }
+#predict-btn { padding: .55rem 1.1rem; }
+
+#predict-height[readonly] { color: var(--text-secondary); cursor: not-allowed; background: rgba(255,255,255,.02); }
+.predict-field-hint { font-size: .68rem; color: var(--text-muted); }
+
+/* ── PREDICT RESULTS ── */
+.predict-results.hidden { display: none; }
+.predict-results { display: flex; flex-direction: column; gap: .9rem; }
+
+.predict-summary {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem;
+    background: var(--bg-card); border: 1px solid var(--border-lit); border-radius: var(--radius-md);
+    padding: .7rem 1rem;
+}
+.predict-point-name { font-family: var(--font-mono); font-size: .85rem; color: var(--green-lit); font-weight: 700; }
+.predict-grass-tag {
+    font-family: var(--font-mono); font-size: .66rem; color: var(--green-lit);
+    background: rgba(111,63,168,.1); border: 1px solid var(--border-lit);
+    padding: .15rem .5rem; border-radius: 20px;
+}
+.predict-rate { font-size: .74rem; color: var(--text-secondary); }
+.predict-rate strong { color: var(--text-primary); }
+
+/* ── PREDICT CARDS ── */
+.predict-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; }
+.predict-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: .9rem; display: flex; flex-direction: column; gap: .25rem;
+    border-left: 3px solid var(--border);
+}
+.predict-card.urgent-high { border-left-color: var(--red); }
+.predict-card.urgent-mid  { border-left-color: var(--amber); }
+.predict-card.urgent-low  { border-left-color: var(--green); }
+.predict-card.recommend   { border-left-color: var(--green-lit); background: rgba(111,63,168,.06); }
+
+.predict-card-label { font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+.predict-card-value { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; color: var(--text-primary); }
+.predict-card-date  { font-size: .68rem; color: var(--text-secondary); }
+
+/* ── PREDICT CHART ── */
+.predict-chart-wrap { display: flex; flex-direction: column; gap: .5rem; }
+#predict-chart { width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg); display: block; }
+
+.chart-legend { display: flex; gap: 1.1rem; font-size: .68rem; color: var(--text-secondary); }
+.chart-legend .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .35rem; }
+
+/* ── PREDICT EXPLANATION ── */
+.predict-explanation {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: .9rem 1.1rem; font-size: .76rem; color: var(--text-secondary); line-height: 1.6;
+}
+.predict-explanation ul { padding-left: 1.1rem; margin-top: .4rem; display: flex; flex-direction: column; gap: .3rem; }
+.predict-explanation strong { color: var(--text-primary); }
+
+/* ── PREDICTION HISTORY ── */
+.predict-history {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: .9rem;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+}
+
+.predict-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .7rem;
+}
+
+.predict-history-title {
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.predict-history-clear {
+    padding: .32rem .6rem;
+    font-size: .62rem;
+}
+
+.predict-history-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .5rem;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: .2rem;
+}
+
+.predict-history-list::-webkit-scrollbar { width: 4px; }
+.predict-history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.predict-history-item {
+    background: rgba(30,26,41,.55);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .55rem .65rem;
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+}
+
+.predict-history-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+}
+
+.predict-history-point {
+    color: var(--text-primary);
+    font-size: .74rem;
+    font-weight: 600;
+}
+
+.predict-history-date {
+    color: var(--text-muted);
+    font-size: .64rem;
+    font-family: var(--font-mono);
+}
+
+.predict-history-cut {
+    color: var(--green-lit);
+    font-size: .7rem;
+    font-family: var(--font-mono);
+}
+
+.predict-history-meta {
+    color: var(--text-secondary);
+    font-size: .66rem;
+}
+
+.predict-history-empty {
+    color: var(--text-muted);
+    font-size: .72rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: .7rem;
+    text-align: center;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+    .predict-form { grid-template-columns: 1fr 1fr; }
+    .predict-form button { grid-column: span 2; }
+    .predict-cards { grid-template-columns: 1fr; }
+}

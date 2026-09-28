@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motiva | Monitoramento Remoto de Vegetação</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:opsz,wght@9..40,300;9..40,500;9..40,700&display=swap" rel="stylesheet" />
+    <!-- Shared styles -->
+    <link rel="stylesheet" href="css/shared/base.css" />
+    <!-- Dashboard styles -->
+    <link rel="stylesheet" href="css/dashboards/monitor/monitor.css" />
+    <link rel="stylesheet" href="css/dashboards/grass-analysis/grass-analysis.css" />
+    <link rel="stylesheet" href="css/dashboards/ai-prediction/ai-prediction.css" />
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-brand">
+            <span class="header-icon"></span>
+            <div>
+                <h1 class="header-title">Motiva</h1>
+                <p class="header-subtitle">Monitoramento Remoto de Vegetação — São Paulo</p>
+            </div>
+        </div>
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="monitor">🗺️ Monitor</button>
+            <button class="tab-btn" data-tab="grass">🌾 Análise de Grama</button>
+            <button class="tab-btn" data-tab="predict">🤖 Previsão IA</button>
+        </nav>
+        <div class="header-meta">
+            <span class="badge" id="status-badge">● Carregando…</span>
+            <span class="header-time" id="last-update">--:--</span>
+        </div>
+    </header>
+
+    <!-- ── TAB: MONITOR ── -->
+    <main class="app-layout tab-panel active" id="tab-monitor">
+        <section class="map-section">
+            <div id="map"></div>
+            <div class="map-legend">
+                <span class="legend-dot low"></span>Baixo risco
+                <span class="legend-dot mid"></span>Moderado
+                <span class="legend-dot high"></span>Alto risco
+            </div>
+            <div class="map-hint" id="map-hint">🖱️ Clique no mapa para adicionar um ponto</div>
+        </section>
+
+        <aside class="sidebar">
+            <div class="stats-row">
+                <div class="stat-box">
+                    <span class="stat-value" id="stat-avg-temp">—</span>
+                    <span class="stat-label">Temp. Média</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="stat-max-wind">—</span>
+                    <span class="stat-label">Vento Máx.</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="stat-high-risk">—</span>
+                    <span class="stat-label">Alto Risco</span>
+                </div>
+            </div>
+
+            <div class="sidebar-header">
+                <h2 class="sidebar-title">Pontos Monitorados</h2>
+                <span class="point-count" id="point-count">0 / 10</span>
+            </div>
+
+            <div class="point-list" id="point-list">
+                <div class="skeleton-list">
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- ── MODAL: ADD POINT ── -->
+    <div class="modal-overlay hidden" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">📍 Novo Ponto de Monitoramento</span>
+                <button class="modal-close" id="modal-close">✕</button>
+            </div>
+            <div class="modal-coords" id="modal-coords">—</div>
+            <div class="modal-field">
+                <label class="modal-label">Nome do ponto</label>
+                <input class="modal-input" id="modal-name" type="text" placeholder="Ex: Parque Municipal XYZ" maxlength="50" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Tipo</label>
+                <select class="modal-input" id="modal-type">
+                    <option value="Ponto Customizado">Ponto Customizado</option>
+                    <option value="Área de Preservação">Área de Preservação</option>
+                    <option value="Parque Urbano">Parque Urbano</option>
+                    <option value="Área de Manancial">Área de Manancial</option>
+                    <option value="Floresta Urbana">Floresta Urbana</option>
+                    <option value="Área de Risco">Área de Risco</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="modal-cancel">Cancelar</button>
+                <button class="btn-primary" id="modal-confirm">Adicionar Ponto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TAB: GRASS ANALYSIS ── -->
+    <main class="app-layout tab-panel" id="tab-grass">
+        <section class="grass-panel">
+            <div class="grass-header">
+                <h2 class="grass-title">🌾 Análise de Altura da Grama</h2>
+                <p class="grass-desc">Envie uma foto da vegetação para análise automática de altura por visão computacional.</p>
+            </div>
+
+            <div class="upload-zone" id="upload-zone">
+                <input type="file" id="file-input" accept="image/*" hidden />
+                <div class="upload-icon">📷</div>
+                <p class="upload-text">Arraste uma imagem aqui ou <span class="upload-link" id="upload-trigger">clique para selecionar</span></p>
+                <p class="upload-sub">JPG, PNG — máx. 10MB</p>
+            </div>
+
+            <div class="grass-examples" id="grass-examples"></div>
+
+            <div class="grass-workspace hidden" id="grass-workspace">
+                <div class="canvas-row">
+                    <div class="canvas-wrap">
+                        <p class="canvas-label">Máscara de Vegetação</p>
+                        <canvas id="canvas-mask"></canvas>
+                    </div>
+                    <div class="canvas-wrap">
+                        <p class="canvas-label">Resultado da Auditoria</p>
+                        <canvas id="canvas-result"></canvas>
+                    </div>
+                </div>
+
+                <div class="grass-stats" id="grass-stats">
+                    <div class="gstat-box">
+                        <span class="gstat-val" id="gs-critical">0</span>
+                        <span class="gstat-key">Críticos (&gt;45cm)</span>
+                    </div>
+                    <div class="gstat-box">
+                        <span class="gstat-val amber" id="gs-attention">0</span>
+                        <span class="gstat-key">Atenção (40–45cm)</span>
+                    </div>
+                    <div class="gstat-box">
+                        <span class="gstat-val green" id="gs-ok">0</span>
+                        <span class="gstat-key">OK (&lt;40cm)</span>
+                    </div>
+                    <div class="gstat-box">
+                        <span class="gstat-val" id="gs-max">—</span>
+                        <span class="gstat-key">Maior altura</span>
+                    </div>
+                </div>
+
+                <button class="btn-secondary" id="grass-reset">↩ Nova Imagem</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- ── TAB: AI PREDICTION ── -->
+    <main class="app-layout tab-panel" id="tab-predict">
+        <section class="predict-panel">
+            <div class="predict-header">
+                <h2 class="predict-title">🤖 Previsão de Corte por IA</h2>
+                <p class="predict-desc">Estime quando a grama de um ponto monitorado atingirá a altura de corte, com base nas condições climáticas atuais do local.</p>
+            </div>
+
+            <p class="predict-empty hidden" id="predict-empty">
+                Nenhum ponto monitorado ainda. Aguarde o carregamento na aba <strong>Monitor</strong> ou adicione um ponto customizado clicando no mapa.
+            </p>
+
+            <div class="predict-form">
+                <div class="predict-field">
+                    <label class="modal-label">Ponto monitorado</label>
+                    <select class="modal-input" id="predict-point-select"></select>
+                </div>
+                <div class="predict-field">
+                    <label class="modal-label">Tipo de grama</label>
+                    <select class="modal-input" id="predict-grass-type"></select>
+                </div>
+                <div class="predict-field">
+                    <label class="modal-label">Altura atual (cm)</label>
+                    <input class="modal-input" id="predict-height" type="number" min="1" max="60" step="0.5" placeholder="Selecione um ponto" readonly />
+                    <span class="predict-field-hint" id="predict-height-hint"></span>
+                </div>
+                <button class="btn-primary" id="predict-btn">Gerar Previsão</button>
+            </div>
+
+            <div class="predict-results hidden" id="predict-results"></div>
+
+            <div class="predict-chart-wrap">
+                <p class="canvas-label">Projeção de Crescimento (60 dias)</p>
+                <canvas id="predict-chart"></canvas>
+                <div class="chart-legend">
+                    <span><span class="legend-dot" style="background:#9b5de5"></span>Crescimento projetado</span>
+                    <span><span class="legend-dot" style="background:#f2a61f"></span>Atenção (40cm)</span>
+                    <span><span class="legend-dot" style="background:#ff4d6d"></span>Crítico (45cm)</span>
+                </div>
+            </div>
+
+            <div class="predict-explanation" id="predict-explanation"></div>
+
+            <section class="predict-history" id="predict-history">
+                <div class="predict-history-header">
+                    <h3 class="predict-history-title">Histórico Local de Previsões</h3>
+                    <button class="btn-secondary predict-history-clear" id="predict-history-clear" type="button">Limpar</button>
+                </div>
+                <div class="predict-history-list" id="predict-history-list"></div>
+            </section>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

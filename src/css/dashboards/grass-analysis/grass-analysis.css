@@ -1,0 +1,73 @@
+/* ─────────────────────────────────────────
+   Motiva — grass-analysis.css
+   Estilos do Dashboard Análise de Grama
+───────────────────────────────────────── */
+
+/* ── GRASS PANEL ── */
+.grass-panel { flex: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 960px; margin: 0 auto; width: 100%; }
+.grass-panel::-webkit-scrollbar { width: 4px; }
+.grass-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.grass-header { }
+.grass-title  { font-family: var(--font-mono); font-size: 1rem; font-weight: 700; color: var(--green-lit); margin-bottom: .4rem; }
+.grass-desc   { font-size: .82rem; color: var(--text-secondary); }
+
+/* ── UPLOAD ZONE ── */
+.upload-zone {
+    border: 2px dashed var(--border); border-radius: var(--radius-lg);
+    padding: 3rem 2rem; display: flex; flex-direction: column;
+    align-items: center; gap: .6rem; cursor: pointer;
+    transition: border-color .2s, background .2s;
+}
+.upload-zone:hover, .upload-zone.drag-over { border-color: var(--green); background: rgba(111,63,168,.05); }
+.upload-icon { font-size: 2.5rem; }
+.upload-text { font-size: .85rem; color: var(--text-secondary); }
+.upload-link { color: var(--green); text-decoration: underline; cursor: pointer; }
+.upload-sub  { font-size: .72rem; color: var(--text-muted); }
+.upload-zone.hidden { display: none; }
+
+/* ── GRASS EXAMPLES ── */
+.grass-examples {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem;
+}
+
+.grass-example-card {
+    display: flex; flex-direction: column; gap: .25rem; text-align: left;
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: .8rem .85rem; color: var(--text-primary); cursor: pointer; transition: border-color .2s, transform .2s;
+}
+.grass-example-card:hover { border-color: var(--green); transform: translateY(-1px); }
+.grass-example-image {
+    width: 100%; height: 112px; object-fit: cover; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--bg-surface); margin-bottom: .25rem;
+}
+.grass-example-name { font-family: var(--font-mono); font-size: .78rem; font-weight: 700; color: var(--green-lit); }
+.grass-example-meta { font-size: .68rem; color: var(--text-muted); }
+.grass-example-desc { font-size: .7rem; line-height: 1.4; color: var(--text-secondary); }
+
+/* ── GRASS WORKSPACE ── */
+.grass-workspace { display: flex; flex-direction: column; gap: 1.25rem; }
+.grass-workspace .grass-examples {
+    margin-top: 0.25rem;
+}
+.grass-workspace.hidden { display: none; }
+
+/* ── CANVAS ROW ── */
+.canvas-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.canvas-wrap { display: flex; flex-direction: column; gap: .5rem; }
+.canvas-label { font-family: var(--font-mono); font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); }
+canvas { width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border); display: block; background: var(--bg); }
+
+/* ── GRASS STATS ── */
+.grass-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; }
+.gstat-box   { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: .8rem; display: flex; flex-direction: column; align-items: center; gap: .2rem; }
+.gstat-val   { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; color: var(--red); }
+.gstat-val.amber { color: var(--amber); }
+.gstat-val.green { color: var(--green); }
+.gstat-key   { font-size: .62rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); text-align: center; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+    .canvas-row { grid-template-columns: 1fr; }
+    .grass-stats { grid-template-columns: repeat(2, 1fr); }
+}
