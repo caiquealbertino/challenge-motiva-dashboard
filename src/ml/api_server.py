@@ -8,7 +8,10 @@ Run:
 
 from __future__ import annotations
 
+import hmac
 import json
+import os
+import re
 import sqlite3
 from datetime import datetime
 from math import exp
@@ -17,19 +20,33 @@ from typing import Optional
 
 import joblib
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+from src.ml.grass_analysis import LIMITE_ATENCAO_CM, LIMITE_CRITICO_CM, analisar_bytes
 
 MODEL_PATH = Path("src/ml/model_bundle.joblib")
 DB_PATH = Path("src/ml/local_predictions.db")
+CAPTURES_DIR = Path("src/ml/capturas")
+RUN_ID_RE = re.compile(r"[A-Za-z0-9_-]{1,64}")
+MAX_PHOTO_BYTES = 8 * 1024 * 1024
+API_KEY = os.getenv("MOTIVA_API_KEY", "")
+CORS_ORIGINS = [o.strip() for o in os.getenv("MOTIVA_CORS_ORIGINS", "").split(",") if o.strip()]
+CORS_ORIGIN_REGEX = r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?"
 BASE_RATE_CM_DAY = 0.18
 
 app = FastAPI(title="Motiva Predictive API", version="1.0.0")
 
+CAPTURES_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/capturas", StaticFiles(directory=CAPTURES_DIR), name="capturas")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -78,6 +95,21 @@ def init_db() -> None:
                 source TEXT NOT NULL,
                 payload_json TEXT NOT NULL,
                 result_json TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS capturas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                corrida_id TEXT NOT NULL,
+                lat REAL NOT NULL,
+                lng REAL NOT NULL,
+                timestamp INTEGER NOT NULL,
+                caminho TEXT NOT NULL,
+                altura_cm REAL,
+                recebida_em TEXT NOT NULL,
+                UNIQUE (corrida_id, timestamp)
             )
             """
         )
@@ -191,6 +223,42 @@ def certainty_from_metrics(metrics: dict | None) -> float:
 @app.on_event("startup")
 def _startup() -> None:
     init_db()
+    if not API_KEY:
+        print("[motiva] MOTIVA_API_KEY nao definida: POST /api/capturas esta aberto")
+
+
+def exigir_chave(x_api_key: Optional[str] = Header(default=None)) -> None:
+    if API_KEY and not hmac.compare_digest(x_api_key or "", API_KEY):
+        raise HTTPException(status_code=401, detail="chave invalida")
+
+
+def status_altura(altura: Optional[float]) -> str:
+    if altura is None:
+        return "sem_medida"
+    if altura > LIMITE_CRITICO_CM:
+        return "critico"
+    if altura >= LIMITE_ATENCAO_CM:
+        return "atencao"
+    return "ok"
+
+
+def foto_url(corrida_id: str, timestamp: int) -> str:
+    return f"/capturas/{corrida_id}/{timestamp}.jpg"
+
+
+def filtro_capturas(corrida_id: Optional[str], de: Optional[int], ate: Optional[int]):
+    where = []
+    params: list = []
+    if corrida_id:
+        where.append("corrida_id = ?")
+        params.append(corrida_id)
+    if de is not None:
+        where.append("timestamp >= ?")
+        params.append(de)
+    if ate is not None:
+        where.append("timestamp <= ?")
+        params.append(ate)
+    return (" WHERE " + " AND ".join(where)) if where else "", params
 
 
 @app.get("/health")
@@ -309,3 +377,158 @@ def predict(payload: PredictRequest):
     result["predictionId"] = prediction_id
 
     return result
+
+@app.post("/api/capturas", dependencies=[Depends(exigir_chave)])
+async def receber_captura(
+    corridaId: str = Form(...),
+    lat: float = Form(...),
+    lng: float = Form(...),
+    timestamp: int = Form(...),
+    foto: UploadFile = File(...),
+):
+    if not RUN_ID_RE.fullmatch(corridaId):
+        raise HTTPException(status_code=400, detail="corridaId invalido")
+    if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+        raise HTTPException(status_code=400, detail="coordenadas invalidas")
+    data = await foto.read()
+    if not data or len(data) > MAX_PHOTO_BYTES:
+        raise HTTPException(status_code=413, detail="foto vazia ou grande demais")
+    if not data.startswith(b"\xff\xd8"):
+        raise HTTPException(status_code=415, detail="a foto precisa ser JPEG")
+
+    pasta = CAPTURES_DIR / corridaId
+    pasta.mkdir(parents=True, exist_ok=True)
+    arquivo = pasta / f"{timestamp}.jpg"
+
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO capturas (corrida_id, lat, lng, timestamp, caminho, recebida_em) VALUES (?, ?, ?, ?, ?, ?)",
+            (corridaId, lat, lng, timestamp, arquivo.as_posix(), datetime.utcnow().isoformat()),
+        )
+        conn.commit()
+        if cur.rowcount == 0:
+            row = conn.execute(
+                "SELECT id FROM capturas WHERE corrida_id = ? AND timestamp = ?", (corridaId, timestamp)
+            ).fetchone()
+            return {"id": row[0], "duplicada": True}
+        captura_id = int(cur.lastrowid)
+
+    arquivo.write_bytes(data)
+
+    try:
+        analise = await run_in_threadpool(analisar_bytes, data)
+    except Exception:
+        analise = None
+
+    altura = analise["max"] if analise and analise["max"] > 0 else None
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("UPDATE capturas SET altura_cm = ? WHERE id = ?", (altura, captura_id))
+        conn.commit()
+
+    return {"id": captura_id, "duplicada": False, "alturaCm": altura, "analise": analise}
+
+
+@app.get("/api/corridas")
+def listar_corridas(limite: int = Query(50, ge=1, le=200)):
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            """
+            SELECT corrida_id, COUNT(*), COUNT(altura_cm), MIN(timestamp), MAX(timestamp), MAX(altura_cm), AVG(altura_cm)
+            FROM capturas
+            GROUP BY corrida_id
+            ORDER BY MAX(timestamp) DESC
+            LIMIT ?
+            """,
+            (limite,),
+        ).fetchall()
+    return [
+        {
+            "corridaId": r[0],
+            "total": r[1],
+            "comMedida": r[2],
+            "inicio": r[3],
+            "fim": r[4],
+            "alturaMaxCm": r[5],
+            "alturaMediaCm": r[6],
+            "status": status_altura(r[5]),
+        }
+        for r in rows
+    ]
+
+
+@app.get("/api/capturas")
+def listar_capturas(
+    corridaId: Optional[str] = None,
+    de: Optional[int] = None,
+    ate: Optional[int] = None,
+    limite: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+):
+    where, params = filtro_capturas(corridaId, de, ate)
+    with sqlite3.connect(DB_PATH) as conn:
+        total = conn.execute(f"SELECT COUNT(*) FROM capturas{where}", params).fetchone()[0]
+        rows = conn.execute(
+            f"SELECT id, corrida_id, lat, lng, timestamp, altura_cm FROM capturas{where} ORDER BY timestamp DESC LIMIT ? OFFSET ?",
+            [*params, limite, offset],
+        ).fetchall()
+    return {
+        "total": total,
+        "itens": [
+            {
+                "id": r[0],
+                "corridaId": r[1],
+                "lat": r[2],
+                "lng": r[3],
+                "timestamp": r[4],
+                "alturaCm": r[5],
+                "status": status_altura(r[5]),
+                "fotoUrl": foto_url(r[1], r[4]),
+            }
+            for r in rows
+        ],
+    }
+
+
+@app.get("/api/trechos")
+def listar_trechos(
+    corridaId: Optional[str] = None,
+    de: Optional[int] = None,
+    ate: Optional[int] = None,
+    celula: float = Query(0.0005, gt=0.00001, le=0.05),
+    limite: int = Query(500, ge=1, le=2000),
+):
+    where, params = filtro_capturas(corridaId, de, ate)
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            f"""
+            SELECT corrida_id,
+                   CAST(ROUND(lat / ?) AS INTEGER) AS gy,
+                   CAST(ROUND(lng / ?) AS INTEGER) AS gx,
+                   COUNT(*) AS total,
+                   COUNT(altura_cm) AS com_medida,
+                   AVG(lat), AVG(lng),
+                   MAX(altura_cm) AS altura_max,
+                   id, timestamp
+            FROM capturas{where}
+            GROUP BY corrida_id, gy, gx
+            ORDER BY altura_max DESC, timestamp DESC
+            LIMIT ?
+            """,
+            [celula, celula, *params, limite],
+        ).fetchall()
+    return [
+        {
+            "id": f"{r[0]}:{r[1]}:{r[2]}",
+            "corridaId": r[0],
+            "lat": r[5],
+            "lng": r[6],
+            "total": r[3],
+            "comMedida": r[4],
+            "alturaMaxCm": r[7],
+            "status": status_altura(r[7]),
+            "capturaId": r[8],
+            "timestamp": r[9],
+            "fotoUrl": foto_url(r[0], r[9]),
+        }
+        for r in rows
+    ]

@@ -42,13 +42,13 @@ No primeiro terminal, inicie a API Python:
 ```powershell
 # Windows PowerShell
 .\.venv\Scripts\Activate.ps1
-python -m uvicorn src.ml.api_server:app --reload --port 8000
+python -m uvicorn src.ml.api_server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ```bash
 # macOS ou Linux
 source .venv/bin/activate
-python -m uvicorn src.ml.api_server:app --reload --port 8000
+python -m uvicorn src.ml.api_server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 A documentação interativa da API fica em <http://127.0.0.1:8000/docs>.
@@ -60,6 +60,24 @@ py -m http.server 5500 --directory src
 ```
 
 No macOS ou Linux, use `python3 -m http.server 5500 --directory src`. Abra <http://127.0.0.1:5500> no navegador. O dashboard de previsão usa a API quando ela está disponível e recorre a uma simulação local quando a API não responde.
+
+## Receber fotos do app mobile
+
+O app envia cada foto por `POST /api/capturas` (multipart: `corridaId`, `lat`, `lng`, `timestamp`, `foto`). O servidor salva o JPEG em `src/ml/capturas/<corridaId>/`, mede a altura da grama e grava tudo em `local_predictions.db`.
+
+Variáveis de ambiente opcionais:
+
+- `MOTIVA_API_KEY`: se definida, o `POST /api/capturas` exige o header `X-API-Key` com esse valor. No app, use `api.token` no `local.properties`.
+- `MOTIVA_CORS_ORIGINS`: origens extras permitidas, separadas por vírgula. `localhost` e redes privadas (`192.168.x.x`, `10.x.x.x`, `172.16-31.x.x`) já são aceitas.
+
+Endpoints de leitura:
+
+- `GET /api/corridas`: resumo por corrida.
+- `GET /api/trechos?corridaId=&de=&ate=&celula=0.0005&limite=500`: fotos agrupadas por trecho (células de cerca de 55 m), com a maior altura e a foto correspondente. `de` e `ate` são timestamps em ms.
+- `GET /api/capturas?corridaId=&de=&ate=&limite=100&offset=0`: lista paginada.
+- `GET /capturas/<corridaId>/<timestamp>.jpg`: a imagem.
+
+O dashboard consulta `/api/trechos` a cada 15 s. Se a API estiver em outro endereço, abra o dashboard com `?api=http://IP:8000`.
 
 ## Treinar o modelo
 

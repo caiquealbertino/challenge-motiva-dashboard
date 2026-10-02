@@ -6,8 +6,6 @@
 
 import { flyToLocation } from "./monitor-map.js";
 
-const TOTAL = 10;
-
 export function initDashboard() {
     document.getElementById("point-list").innerHTML = "";
 }
@@ -53,7 +51,7 @@ function _appendCard(location, weather, delay, isCustom) {
     card.innerHTML = `
         <div class="card-header">
             <span class="card-name">${location.name} ${customBadge}</span>
-            <span class="card-id">#${String(location.id).padStart(2, "0")}</span>
+            <span class="card-id">#${location.displayId ?? String(location.id).padStart(2, "0")}</span>
         </div>
         <div class="card-coords">${location.lat.toFixed(4)}, ${location.lon.toFixed(4)} · ${location.type}</div>
         <div class="card-metrics">
@@ -76,6 +74,10 @@ function _appendCard(location, weather, delay, isCustom) {
 
     card.addEventListener("click", () => flyToLocation(location.id));
     list.appendChild(card);
+}
+
+export function removeCard(locationId) {
+    document.querySelector(`#point-list .point-card[data-location-id="${locationId}"]`)?.remove();
 }
 
 export function renderErrorCard(location) {
@@ -104,7 +106,7 @@ export function updateStats(weatherResults) {
 }
 
 export function updatePointCount(count) {
-    document.getElementById("point-count").textContent = `${count} / ${TOTAL}`;
+    document.getElementById("point-count").textContent = String(count);
 }
 
 export function setStatusBadge(state, text) {

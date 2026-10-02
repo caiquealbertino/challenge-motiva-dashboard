@@ -1,6 +1,6 @@
 import { predictCutRisk as predictCutRiskSimulated } from "./predictive-backend-sim.js";
 
-const DEFAULT_API_BASE = "http://127.0.0.1:8000";
+import { API_BASE as DEFAULT_API_BASE } from "../../shared/api-config.js";
 
 async function predictCutRiskFromApi(payload) {
     const response = await fetch(`${DEFAULT_API_BASE}/predict`, {
