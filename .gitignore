@@ -4,3 +4,4 @@ __pycache__/
 .env
 src/ml/local_predictions.db
 src/ml/local_predictions.db-*
+src/ml/capturas/

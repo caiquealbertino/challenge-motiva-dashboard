@@ -15,6 +15,7 @@ import {
 } from "./dashboards/monitor/monitor-dashboard.js";
 import { registerPoint } from "./shared/points-store.js";
 import { initPrediction } from "./dashboards/ai-prediction/ai-prediction.js";
+import { initCapturasSync } from "./dashboards/monitor/capturas-sync.js";
 
 const weatherResults = [];
 let customIdCounter  = 100;
@@ -29,6 +30,7 @@ async function init() {
     initGrassAnalysis();
     seedGrassExamplesOnMap();
     initPrediction();
+    initCapturasSync();
     // Monitor only image-analysis points from now on.
     updatePointCount(0);
     setStatusBadge("done");

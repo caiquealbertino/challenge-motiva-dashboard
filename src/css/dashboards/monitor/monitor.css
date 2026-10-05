@@ -120,3 +120,5 @@
     .map-section { flex: 0 0 40vh; }
     .sidebar { width: 100%; border-left: none; border-top: 1px solid var(--border); }
 }
+.corrida-filter { margin: .75rem 0 .25rem; }
+.popup-photo { display: block; width: 100%; margin-top: .5rem; border-radius: 6px; }

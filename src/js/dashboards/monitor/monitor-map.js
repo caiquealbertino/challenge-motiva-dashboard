@@ -94,11 +94,13 @@ function buildPopup(location, weather) {
     return `
         <div class="popup-title">${location.name}</div>
         <div style="font-size:.68rem; color:var(--text-muted); margin-bottom:.4rem;">${location.type}</div>
+        ${location.grassStats ? `<div class="popup-row"><span>Altura máx.</span><span class="popup-val">${location.grassStats.max.toFixed(1)} cm</span></div>` : ""}
         <div class="popup-row"><span>Temperatura</span><span class="popup-val">${weather.temperature}°C</span></div>
         <div class="popup-row"><span>Vento</span><span class="popup-val">${weather.windspeed} km/h</span></div>
         ${weather.precipProb !== null ? `<div class="popup-row"><span>Prob. Chuva</span><span class="popup-val">${weather.precipProb}%</span></div>` : ""}
         ${weather.humidity !== null ? `<div class="popup-row"><span>Humidade</span><span class="popup-val">${weather.humidity}%</span></div>` : ""}
         <div style="margin-top:.5rem; font-size:.72rem; color:var(--text-secondary);">${weather.icon} ${weather.label}</div>
+        ${location.fotoUrl ? `<img class="popup-photo" src="${location.fotoUrl}" alt="Foto do trecho" loading="lazy" />` : ""}
     `;
 }
 
@@ -117,6 +119,13 @@ export function addOrUpdateMarker(location, weather, isCustom = false) {
             .bindPopup(popup, { maxWidth: 220 });
         markerRegistry.set(location.id, marker);
     }
+}
+
+export function removeMarker(locationId) {
+    const marker = markerRegistry.get(locationId);
+    if (!marker) return;
+    marker.remove();
+    markerRegistry.delete(locationId);
 }
 
 export function flyToLocation(locationId) {

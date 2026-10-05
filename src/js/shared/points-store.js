@@ -40,3 +40,20 @@ export function getPoint(id) {
 export function onPointsChange(cb) {
     listeners.push(cb);
 }
+
+/**
+ * Registers many points at once and notifies listeners a single time.
+ * @param {Array<{location: object, weather: object}>} entries
+ */
+export function registerPoints(entries) {
+    entries.forEach(({ location, weather }) => points.set(location.id, { location, weather }));
+    listeners.forEach(cb => cb(getAllPoints()));
+}
+
+/**
+ * Removes a point by id and notifies listeners.
+ * @param {number|string} id
+ */
+export function removePoint(id) {
+    if (points.delete(id)) listeners.forEach(cb => cb(getAllPoints()));
+}
