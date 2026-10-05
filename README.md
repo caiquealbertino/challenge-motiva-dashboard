@@ -14,13 +14,22 @@ No PowerShell, na pasta raiz do projeto, crie o ambiente e instale as dependênc
 
 ```powershell
 py -3.12 -m venv .venv
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r src\ml\requirements.txt
 ```
 
-O comando de política vale somente para a sessão atual do PowerShell. Se o Python Launcher não estiver disponível, instale o Python 3.12 e use `python` no lugar de `py -3.12` ao criar o ambiente.
+Se `py` não for reconhecido, tente `python -m venv .venv`. Se o Python foi instalado, mas ainda não está no `PATH`, use o caminho do executável instalado. Por exemplo, na instalação por usuário do Python 3.12:
+
+```powershell
+& "$env:LocalAppData\Programs\Python\Python312\python.exe" -m venv .venv
+```
+
+Instale as dependências usando o Python do ambiente virtual. Assim, não é necessário ativá-lo nem alterar a política de execução do PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r src\ml\requirements.txt
+```
+
+Os comandos seguintes também usam diretamente o Python do ambiente virtual, então não precisam de `Activate.ps1`.
 
 ## Executar no macOS ou Linux
 
@@ -37,29 +46,32 @@ python -m pip install -r src/ml/requirements.txt
 
 Use dois terminais, ambos na raiz do projeto.
 
-No primeiro terminal, inicie a API Python:
+No primeiro terminal, inicie a API Python. O endereço `127.0.0.1` limita o acesso ao próprio computador:
 
 ```powershell
 # Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-python -m uvicorn src.ml.api_server:app --reload --host 0.0.0.0 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn src.ml.api_server:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ```bash
 # macOS ou Linux
-source .venv/bin/activate
-python -m uvicorn src.ml.api_server:app --reload --host 0.0.0.0 --port 8000
+./.venv/bin/python -m uvicorn src.ml.api_server:app --reload --host 127.0.0.1 --port 8000
 ```
 
 A documentação interativa da API fica em <http://127.0.0.1:8000/docs>.
 
-No segundo terminal, inicie um servidor para os arquivos do frontend:
+No segundo terminal, também na raiz do projeto, inicie o servidor dos arquivos do frontend:
 
 ```powershell
-py -m http.server 5500 --directory src
+.\.venv\Scripts\python.exe -m http.server 5500 --bind 127.0.0.1 --directory src
 ```
 
-No macOS ou Linux, use `python3 -m http.server 5500 --directory src`. Abra <http://127.0.0.1:5500> no navegador. O dashboard de previsão usa a API quando ela está disponível e recorre a uma simulação local quando a API não responde.
+```bash
+# macOS ou Linux
+./.venv/bin/python -m http.server 5500 --bind 127.0.0.1 --directory src
+```
+
+Abra <http://127.0.0.1:5500> no navegador. O dashboard de previsão usa a API quando ela está disponível e recorre a uma simulação local quando a API não responde. Esses comandos são para uso local; para receber fotos de outro dispositivo, consulte a seção abaixo e configure o acesso de rede conscientemente.
 
 ## Receber fotos do app mobile
 
@@ -81,10 +93,16 @@ O dashboard consulta `/api/trechos` a cada 15 s. Se a API estiver em outro ender
 
 ## Treinar o modelo
 
-Com o ambiente ativado e as dependências instaladas, execute na raiz:
+Com as dependências instaladas, execute na raiz do projeto:
+
+```powershell
+# Windows PowerShell
+.\.venv\Scripts\python.exe src\ml\train_cut_model.py --data src\ml\data\cut_training_sample.csv --out src\ml\model_bundle.joblib
+```
 
 ```bash
-python src/ml/train_cut_model.py --data src/ml/data/cut_training_sample.csv --out src/ml/model_bundle.joblib
+# macOS ou Linux
+./.venv/bin/python src/ml/train_cut_model.py --data src/ml/data/cut_training_sample.csv --out src/ml/model_bundle.joblib
 ```
 
 O conjunto de dados precisa conter as colunas exigidas pelo script e ao menos 30 linhas válidas. O treinamento substitui o arquivo do modelo usado pela API.
